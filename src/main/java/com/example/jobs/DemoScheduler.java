@@ -17,8 +17,8 @@ public class DemoScheduler {
 	private static final Logger log = LoggerFactory.getLogger(DemoScheduler.class);
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
    
-    @Autowired
-    private UserAccountRepository customerRepository;
+//    @Autowired
+//    private UserAccountRepository customerRepository;
 
     @Scheduled(cron = "0 0/1 * * * *")
     public void reportCurrentTime() {

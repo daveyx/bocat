@@ -14,13 +14,13 @@ import com.example.cassandra.repo.UserAccountRepository;
 @Controller
 @RequestMapping("/playground")
 public class PlaygroundController {
-	@Autowired
-	private UserAccountRepository userAccountRepository;
-	
-	@RequestMapping(method = RequestMethod.GET)
-	@ResponseBody
-	public List<UserAccount> findAll() {
-//		return userAccountRepository.findAll();
-		return null;
-	}
+//	@Autowired
+//	private UserAccountRepository userAccountRepository;
+//	
+//	@RequestMapping(method = RequestMethod.GET)
+//	@ResponseBody
+//	public List<UserAccount> findAll() {
+////		return userAccountRepository.findAll();
+//		return null;
+//	}
 }
