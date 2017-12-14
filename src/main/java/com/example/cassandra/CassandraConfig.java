@@ -6,48 +6,90 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.cassandra.config.CassandraClusterFactoryBean;
+import org.springframework.data.cassandra.config.CassandraSessionFactoryBean;
+import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
+import org.springframework.data.cassandra.convert.CassandraConverter;
+import org.springframework.data.cassandra.convert.MappingCassandraConverter;
+import org.springframework.data.cassandra.core.CassandraAdminOperations;
+import org.springframework.data.cassandra.core.CassandraAdminTemplate;
 import org.springframework.data.cassandra.mapping.BasicCassandraMappingContext;
 import org.springframework.data.cassandra.mapping.CassandraMappingContext;
+import org.springframework.data.cassandra.mapping.SimpleUserTypeResolver;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 
 @Configuration
-@EnableCassandraRepositories(
-		  basePackages = "com.example.cassandra.repo")
+@PropertySource(value = { "classpath:cassandra.properties" })
+@EnableCassandraRepositories(basePackages = "com.example.cassandra.repo")
 public class CassandraConfig extends AbstractCassandraConfiguration {
 
 	@Autowired
-	private Environment env;
-	
+	private Environment environment;
+
 	@Override
 	protected String getKeyspaceName() {
-		return "testKeySpace";
+		return environment.getProperty("cassandra.keyspace");
 	}
 
 	@Bean
 	public CassandraClusterFactoryBean cluster() {
 		CassandraClusterFactoryBean cluster = new CassandraClusterFactoryBean();
-		cluster.setContactPoints("172.18.0.2");
-		cluster.setPort(9042);
+		cluster.setContactPoints(environment.getProperty("cassandra.contactpoints"));
+		cluster.setPort(Integer.parseInt(environment.getProperty("cassandra.port")));
 		return cluster;
 	}
 
-    @Override
-    @Bean
-    public CassandraMappingContext cassandraMapping() throws ClassNotFoundException {
-        return new BasicCassandraMappingContext();
-    }
-	
-	@Override
-	protected List getStartupScripts() {
-		return Arrays.asList(env.getProperty("cassandra.startup.script"));
+	// @Override
+	// @Bean
+	// public CassandraMappingContext cassandraMapping() throws
+	// ClassNotFoundException {
+	// return new BasicCassandraMappingContext();
+	// }
+
+	@Bean
+	public CassandraMappingContext mappingContext() {
+
+		BasicCassandraMappingContext mappingContext = new BasicCassandraMappingContext();
+		mappingContext.setUserTypeResolver(new SimpleUserTypeResolver(cluster().getObject(), environment.getProperty("cassandra.keyspace")));
+
+		return mappingContext;
 	}
 
-	
+	@Bean
+	public CassandraConverter converter() {
+		return new MappingCassandraConverter(mappingContext());
+	}
+
+	@Override
+	protected List<String> getStartupScripts() {
+		return Arrays.asList(environment.getProperty("cassandra.startup.script"));
+	}
+
+	@Bean
+	public CassandraSessionFactoryBean session() {
+
+		CassandraSessionFactoryBean session = new CassandraSessionFactoryBean();
+		session.setCluster(cluster().getObject());
+		session.setKeyspaceName(environment.getProperty("cassandra.keyspace"));
+		session.setConverter(converter());
+		session.setSchemaAction(SchemaAction.NONE);
+
+		return session;
+	}
+	@Bean
+    public CassandraAdminOperations cassandraAdminOperations() throws Exception {
+        return new CassandraAdminTemplate(session().getObject(), cassandraConverter());
+    }
 //	@Bean
-//	public CassandraCustomConversions cassandraCustomConversions() {
-//		return new CassandraCustomConversions(Collections.emptyList());
+//	  public CassandraOperations cassandraTemplate() throws Exception {
+//	    return new CassandraTemplate(session().getObject());
+//	  }
+
+//	@Bean
+//	public CassandraAdminOperations cassandraTemplate() throws Exception {
+//		return new CassandraTemplate(session().getObject());
 //	}
 }
