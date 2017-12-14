@@ -1,5 +1,8 @@
 package com.example;
 
+import java.util.HashMap;
+import java.util.UUID;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,7 @@ public class Startup {
 
 	private static final Log LOGGER = LogFactory.getLog(Startup.class);
 
+	@SuppressWarnings("unused")
 	@Autowired
 	private Environment environment;
 
@@ -33,6 +37,7 @@ public class Startup {
 	@EventListener(ApplicationReadyEvent.class)
 	public void doSomethingAfterStartup() {
 		initCassandra();
+		initTestData();
 		LOGGER.info("-------------> startup finished");
 	}
 
@@ -44,20 +49,23 @@ public class Startup {
 
 	private void initCassandra() {
 //		adminTemplate.dropTable(CqlIdentifier.cqlId(TestDataRepository.TESTDATA_TABLE));
-
-		adminTemplate.execute(DropKeyspaceSpecification.dropKeyspace("testkeyspace"));
+		adminTemplate.createTable(true, CqlIdentifier.cqlId(TestDataRepository.TESTDATA_TABLE), TestData.class,
+				new HashMap<String, Object>());
+		 adminTemplate.execute(DropKeyspaceSpecification.dropKeyspace(environment.getProperty("cassandra.keyspace")));
 		LOGGER.info("-------------> initCassandra finished");
 	}
 
 	private void initTestData() {
-		// final TestData testDataExisting =
-		// testDataRepository.findByUuid(TestData.TEST_UUID);
-		// if (testDataExisting != null) {
-		// testDataRepository.deleteAll();
-		// }
+		final UUID uuid = UUID.fromString(TestData.TEST_UUID);
+		final TestData testDataExisting = testDataRepository.findByUuid(TestData.TEST_UUID);
+		if (testDataExisting != null) {
+			testDataRepository.deleteAll();
+		}
 		final TestData testData = new TestData();
+		testData.setId(uuid);
+		testData.setUuid(TestData.TEST_UUID);
 		testData.setValue("1");
 		final TestData testDataSaved = testDataRepository.save(testData);
-		System.out.println("testdata.uuid=" + testDataSaved.getId());
+		LOGGER.info("testdata.uuid=" + testDataSaved.getId());
 	}
 }
