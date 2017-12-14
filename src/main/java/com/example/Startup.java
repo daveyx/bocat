@@ -8,7 +8,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cassandra.core.cql.CqlIdentifier;
-import org.springframework.cassandra.core.keyspace.DropKeyspaceSpecification;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
@@ -41,17 +40,15 @@ public class Startup {
 		LOGGER.info("-------------> startup finished");
 	}
 
-
 	//
 	// ---> private
 	//
 
-
 	private void initCassandra() {
-//		adminTemplate.dropTable(CqlIdentifier.cqlId(TestDataRepository.TESTDATA_TABLE));
+		// adminTemplate.dropTable(CqlIdentifier.cqlId(TestDataRepository.TESTDATA_TABLE));
 		adminTemplate.createTable(true, CqlIdentifier.cqlId(TestDataRepository.TESTDATA_TABLE), TestData.class,
 				new HashMap<String, Object>());
-		 adminTemplate.execute(DropKeyspaceSpecification.dropKeyspace(environment.getProperty("cassandra.keyspace")));
+//		adminTemplate.execute(DropKeyspaceSpecification.dropKeyspace(environment.getProperty("cassandra.keyspace")));
 		LOGGER.info("-------------> initCassandra finished");
 	}
 
